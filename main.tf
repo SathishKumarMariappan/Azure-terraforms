@@ -1,7 +1,6 @@
-provider "azurem" {
-    features {}
+provider "azurerm" {
+  features {}
 }
-
 
 resource "azurerm_resource_group" "example" {
   name     = "Demo-resourse"
@@ -9,7 +8,7 @@ resource "azurerm_resource_group" "example" {
 }
 
 resource "azurerm_storage_account" "example" {
-  name                     = "storageaccountCreatedForDemo"
+  name                     = "20240225639"
   resource_group_name      = azurerm_resource_group.example.name
   location                 = azurerm_resource_group.example.location
   account_tier             = "Standard"
