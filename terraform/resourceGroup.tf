@@ -18,3 +18,7 @@ resource "azurerm_resource_group" "resourcegroup333" {
   name     = "terraform-444-resourse"
   location = "West Europe"
 }
+
+# keyword nativeServiceInstanceType terraformVariable {
+#   properties
+# }
