@@ -3,7 +3,7 @@ provider "azurerm" {
 }
 
 resource "azurerm_resource_group" "example" {
-  name     = "Demo-resourse"
+  name     = "Demo-resourse-terraform"
   location = "West Europe"
 }
 
