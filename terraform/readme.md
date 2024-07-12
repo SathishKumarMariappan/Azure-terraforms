@@ -2,15 +2,15 @@ Terraform
 
     name it with .tf 
 
-    cmd:: terraform init 
+    cmd:: terraform init **
 
     cmd:: terraform validate 
 
     cmd:: terraform plan 
 
-    cmd:: terraform apply
+    cmd:: terraform apply **
 
-    cmd:: terraform destroy
+    cmd:: terraform destroy **
 
     terraform state file 
 
