@@ -7,6 +7,9 @@ resource "azurerm_resource_group" "resourcegroup" {
 resource "azurerm_resource_group" "resourcegrupfeature" {
   name     = "terraform-feature-resourse"
   location = "West Europe"
+  tags = {
+     environment = "staging"
+   }
 }
 
 resource "azurerm_resource_group" "resourcegroup222" {
@@ -16,9 +19,6 @@ resource "azurerm_resource_group" "resourcegroup222" {
 
 resource "azurerm_resource_group" "resourcegroup333" {
   name     = "terraform-444-resourse"
-  location = "West Europe"
+  location = "East US"
 }
 
-# keyword nativeServiceInstanceType terraformVariable {
-#   properties
-# }

@@ -7,7 +7,7 @@ resource "azurerm_storage_account" "example" {
 }
 
 resource "azurerm_mssql_server" "example" {
-  name                         = "example-sqlserver"
+  name                         = "example-sqlserver-20240813"
   resource_group_name          = azurerm_resource_group.resourcegrupfeature.name
   location                     = azurerm_resource_group.resourcegrupfeature.location
   version                      = "12.0"

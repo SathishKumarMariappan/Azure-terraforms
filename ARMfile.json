@@ -3,7 +3,7 @@
     "contentVersion": "2.3.1.5",
     "parameters": {},
     "resources": [
-		 {
+		{
             "type": "Microsoft.Storage/storageAccounts",
             "apiVersion": "2019-06-01",
             "name": "202401027001111",
