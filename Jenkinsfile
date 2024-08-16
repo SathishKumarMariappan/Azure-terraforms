@@ -15,22 +15,22 @@ pipeline {
         }
         stage('Init - ugrade') {
             steps {
-                sh 'terraform init -upgrade'
+                bat 'terraform init -upgrade'
             }
         }
         stage('Clean up ') {
             steps {
-                sh 'terraform destroy -auto-approve'
+                bat 'terraform destroy -auto-approve'
             }
         }
         stage('validate') {
             steps {
-                sh 'terraform validate'
+                bat 'terraform validate'
             }
         }
         stage('Apply') {
             steps {
-                sh 'terraform apply -auto-approve'
+                bat 'terraform apply -auto-approve'
             }
         }
     }
