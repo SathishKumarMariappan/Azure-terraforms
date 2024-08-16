@@ -28,11 +28,6 @@ pipeline {
                 bat 'terraform validate'
             }
         }
-        stage('Apply') {
-            steps {
-                bat 'terraform apply -auto-approve'
-            }
-        }
     }
 }
 
