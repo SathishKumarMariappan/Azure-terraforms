@@ -5,15 +5,12 @@ pipeline {
 
         stage('Version') {
             steps {
-                sh ''' 
-                terraform version
-                    az --version              
-                '''
+                bat 'az --version'          
             }
         }
         stage('Init') {
             steps {
-                sh 'terraform init'
+                bat 'terraform init'
             }
         }
         stage('Init - ugrade') {
