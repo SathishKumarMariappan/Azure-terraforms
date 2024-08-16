@@ -1,6 +1,6 @@
 pipeline {
     agent any
-
+    tools {terraform19.4}
     stages {
 
         stage('Version') {
