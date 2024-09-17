@@ -74,7 +74,9 @@ angulr || .net || sql
 
 
 
-
+create ||  resource is in terra form but not in cloud 
+delete || resource in cloud but not in terraform 
+modifiy || resource configh in cloud and terraform are not same 
 
 
 
