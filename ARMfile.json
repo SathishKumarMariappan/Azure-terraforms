@@ -1,43 +1,56 @@
 {
     "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
-    "contentVersion": "2.3.1.5",
+    "contentVersion": "1.0.0.1",
     "parameters": {},
     "resources": [
-		{
-            "type": "Microsoft.Storage/storageAccounts",
-            "apiVersion": "2019-06-01",
-            "name": "202401027001111",
-            "location": "[resourceGroup().location]",
-            "sku": {
-                "name": "Standard_LRS",
-                "tier": "Standard"
-            },
-            "kind": "StorageV2",
-            "properties": {}
-        },
         {
             "type": "Microsoft.Storage/storageAccounts",
-            "apiVersion": "2019-06-01",
-            "name": "202401027002222",
-            "location": "[resourceGroup().location]",
+            "apiVersion": "2021-09-01",
+            "name": "20240928111",
+            "location": "resourceGroup().location",
             "sku": {
-                "name": "Standard_LRS",
-                "tier": "Standard"
+              "name": "Standard_LRS"
             },
             "kind": "StorageV2",
-            "properties": {}
-        },
-        {
+            "properties": {
+              "supportsHttpsTrafficOnly": true
+            }
+          },{
             "type": "Microsoft.Storage/storageAccounts",
-            "apiVersion": "2019-06-01",
-            "name": "202401027003333",
-            "location": "[resourceGroup().location]",
+            "apiVersion": "2021-09-01",
+            "name": "20240928222",
+            "location": "resourceGroup().location",
             "sku": {
-                "name": "Standard_LRS",
-                "tier": "Standard"
+              "name": "Standard_LRS"
             },
             "kind": "StorageV2",
-            "properties": {}
-        }
-	]
+            "properties": {
+              "supportsHttpsTrafficOnly": true
+            }
+          },{
+            "type": "Microsoft.Storage/storageAccounts",
+            "apiVersion": "2021-09-01",
+            "name": "20240928222",
+            "location": "resourceGroup().location",
+            "sku": {
+              "name": "Standard_LRS"
+            },
+            "kind": "StorageV2",
+            "properties": {
+              "supportsHttpsTrafficOnly": true
+            }
+          },{
+            "type": "Microsoft.Storage/storageAccounts",
+            "apiVersion": "2021-09-01",
+            "name": "20240928222",
+            "location": "resourceGroup().location",
+            "sku": {
+              "name": "Standard_LRS"
+            },
+            "kind": "StorageV2",
+            "properties": {
+              "supportsHttpsTrafficOnly": true
+            }
+          }      
+    ]
 }
