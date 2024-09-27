@@ -30,7 +30,7 @@
           },{
             "type": "Microsoft.Storage/storageAccounts",
             "apiVersion": "2021-09-01",
-            "name": "20240928222",
+            "name": "20240928333",
             "location": "resourceGroup().location",
             "sku": {
               "name": "Standard_LRS"
