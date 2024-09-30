@@ -10,7 +10,8 @@ pipeline {
         }
         stage('Init') {
             steps {
-                bat 'terraform init'
+                bat '''cd terraform
+                    terraform init'''
             }
         }
         stage('Init - ugrade') {
