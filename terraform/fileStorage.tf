@@ -1,6 +1,6 @@
 resource "azurerm_resource_group" "resourcegroupfilestorege" {
-  name     = "file-storage-resourse"
-  location = "West Europe"
+  name     = var.project_prefics + "file-storage-resourse"
+  location = var.resource_group_location
 }
 
 

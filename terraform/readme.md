@@ -20,7 +20,7 @@ Terraform
 # each servise in diff file || service segretion 
 # all service related to a feature  || feture segretion 
 
-# keyword nativeServiceInstanceType terraformVariable {
+# keyword nativeServiceName terraformVariable {
 #   properties
 # }
 
@@ -82,4 +82,10 @@ modifiy || resource configh in cloud and terraform are not same
 
 
 
-
+<!-- 
+// use terraform to create continer registry and AKS 
+// use az repo in az devops to store the code 
+// use az devops pipeline to build docker continer from the code inaz repo
+// use az devops pipeline to push image to continer registry which was created by terraform 
+// use az devops pipeline to deploy image from continer registry which was created by terra to AKS which was created bt terra
+// If time permits do the above with ARM insted of Terraform  -->
