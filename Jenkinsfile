@@ -10,22 +10,32 @@ pipeline {
         }
         stage('Init') {
             steps {
-                bat 'terraform init'
+                bat '''cd terraform
+                    terraform init'''
             }
         }
         stage('Init - ugrade') {
             steps {
-                bat 'terraform init -upgrade'
+                bat '''cd terraform
+terraform init -upgrade'''
             }
         }
         stage('Clean up ') {
             steps {
-                bat 'terraform destroy -auto-approve'
+                bat '''cd terraform
+                terraform destroy -auto-approve'''
             }
         }
         stage('validate') {
             steps {
-                bat 'terraform validate'
+                bat '''cd terraform
+                terraform validate'''
+            }
+        }
+        stage('Deploy') {
+            steps {
+                bat '''cd terraform
+                terraform apply -auto-approve'''
             }
         }
     }
