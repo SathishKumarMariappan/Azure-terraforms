@@ -2,6 +2,8 @@ provider "azurerm" {
   features {}
 }
 
+
+
 resource "azurerm_resource_group" "example" {
   name     = "Demo-resourse-terraform"
   location = "West Europe"
