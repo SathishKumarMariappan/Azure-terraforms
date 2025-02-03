@@ -82,7 +82,7 @@ modifiy || resource configh in cloud and terraform are not same
 
 
 
-<!-- Module 8 + 9 combined 
+<!-- Module 8 + 9 combined (docker,kuber, terraform and pipeline)
 // use terraform to create continer registry and AKS 
 // use az repo in az devops to store the code 
 // use az devops pipeline to build docker continer from the code inaz repo

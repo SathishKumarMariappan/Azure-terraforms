@@ -17,7 +17,7 @@ pipeline {
         stage('Init - ugrade') {
             steps {
                 bat '''cd terraform
-terraform init -upgrade'''
+                terraform init -upgrade'''
             }
         }
         stage('Clean up ') {

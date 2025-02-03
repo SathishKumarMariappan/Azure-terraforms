@@ -1,20 +1,20 @@
 resource "azurerm_resource_group" "resourcegroupfilestorege" {
-  name     = var.project_prefics + "file-storage-resourse"
+  name     = "file-storage-resourse"
   location = var.resource_group_location
 }
 
 
-# resource "azurerm_storage_account" "file-storage" {
-#   name                     = "20240229filestorage"
-#   resource_group_name      = azurerm_resource_group.resourcegroupfilestorege.name
-#   location                 = azurerm_resource_group.resourcegroupfilestorege.location
-#   account_tier             = "Standard"
-#   account_replication_type = "GRS"
+resource "azurerm_storage_account" "file-storage" {
+  name                     = "20240229filestorage"
+  resource_group_name      = azurerm_resource_group.resourcegroupfilestorege.name
+  location                 = azurerm_resource_group.resourcegroupfilestorege.location
+  account_tier             = "Standard"
+  account_replication_type = "GRS"
 
-#   tags = {
-#     environment = "staging"
-#   }
-# }
+  tags = {
+    environment = "staging"
+  }
+}
 
 
 resource "azurerm_service_plan" "file-service-app-service-plan" {
