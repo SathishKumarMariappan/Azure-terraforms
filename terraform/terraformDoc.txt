@@ -31,7 +31,7 @@ terraform : azure, aws, gcp, oracle ...
 2 terraform validate || check if all the script are proper (when ever i make a change )
 3 terraform plan || plan find differnce between teraform script and Infrastrue avalible in cloud (create, update, delete) (before deploying the IOC )
 4 terraform apply || take the script and perform the changes in cloud infra (to update the coud witth ioc )
-terraform destroy || remove all services created and maintained by terraform state 
+5 terraform destroy || remove all services created and maintained by terraform state 
 
 
 terraform statefile || has the information of terraform current state 

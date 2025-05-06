@@ -1,0 +1,16 @@
+
+
+team of 5 DEV::
+
+
+dev A makes a change mails it to the group 
+
+Shared folder (FTP)|| internet 
+
+local || folders => git || Repos 
+
+\\ activity log || version control 
+\\ branch 
+\\ review it during merge || MR/PR
+
+\\ actions//webhooks 

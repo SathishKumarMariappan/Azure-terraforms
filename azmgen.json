@@ -1,0 +1,1640 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "virtualMachines_demo2_name": {
+            "defaultValue": "demo2",
+            "type": "String"
+        },
+        "sshPublicKeys_demo2_key_name": {
+            "defaultValue": "demo2_key",
+            "type": "String"
+        },
+        "storageAccounts_2024dsge_name": {
+            "defaultValue": "2024dsge",
+            "type": "String"
+        },
+        "publicIPAddresses_demo2_ip_name": {
+            "defaultValue": "demo2-ip",
+            "type": "String"
+        },
+        "virtualNetworks_demo2_vnet_name": {
+            "defaultValue": "demo2-vnet",
+            "type": "String"
+        },
+        "storageAccounts_20ewgfw3333_name": {
+            "defaultValue": "20ewgfw3333",
+            "type": "String"
+        },
+        "networkInterfaces_demo2321_z1_name": {
+            "defaultValue": "demo2321_z1",
+            "type": "String"
+        },
+        "storageAccounts_20wefw7002222_name": {
+            "defaultValue": "20wefw7002222",
+            "type": "String"
+        },
+        "networkSecurityGroups_demo2_nsg_name": {
+            "defaultValue": "demo2-nsg",
+            "type": "String"
+        },
+        "storageAccounts_20240102700111qufdwuke1_name": {
+            "defaultValue": "20240102700111qufdwuke1",
+            "type": "String"
+        },
+        "virtualMachines_Demo1_name": {
+            "defaultValue": "Demo1",
+            "type": "String"
+        },
+        "sshPublicKeys_Demo1_key_name": {
+            "defaultValue": "Demo1_key",
+            "type": "String"
+        },
+        "publicIPAddresses_Demo1_ip_name": {
+            "defaultValue": "Demo1-ip",
+            "type": "String"
+        },
+        "virtualNetworks_Demo1_vnet_name": {
+            "defaultValue": "Demo1-vnet",
+            "type": "String"
+        },
+        "networkInterfaces_demo1412_z1_name": {
+            "defaultValue": "demo1412_z1",
+            "type": "String"
+        },
+        "networkSecurityGroups_Demo1_nsg_name": {
+            "defaultValue": "Demo1-nsg",
+            "type": "String"
+        },
+        "location": {
+            "type": "string",
+            "metadata": {
+                "description": "Location for the VM, only certain regions support zones during preview."
+            }
+        },  
+        "namePrefix": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 8,
+            "metadata": {
+                "description": "Naming prefix for each new resource created. 3-char min, 8-char max, lowercase alphanumeric"
+            }
+        },
+        "domainName": {
+            "type": "string",
+            "metadata": {
+                "description": "DNS domain name for existing Active Directory domain"
+            }
+        },
+        "adminUsername": {
+            "type": "string",
+            "metadata": {
+                "description": "Name of the Administrator of the existing Active Directory Domain"
+            }
+        },
+        "adminPassword": {
+            "type": "securestring",
+            "minLength": 12,
+            "metadata": {
+                "description": "Password for the Administrator account of the existing Active Directory Domain"
+            }
+        },
+        "sqlServiceAccount": {
+            "type": "string",
+            "metadata": {
+                "description": "Name of the user account to be used for the SQL Server service account"
+            }
+        },
+        "sqlServicePassword": {
+            "type": "securestring",
+            "minLength": 12,
+            "metadata": {
+                "description": "Password to be used for the SQL Server service account"
+            }
+        },
+        "subnetId": {
+            "type": "string",
+            "metadata": {
+                "description": "Resource ID for existing vnet/subnet to which VM NICs should be attached"
+            }
+        },
+        "enableOutboundInternet": {
+            "type": "string",
+            "allowedValues": [
+                "Yes",
+                "No"
+            ],
+            "metadata": {
+                "description": "Enable outbound Internet access via source NAT to support ongoing VM Agent extension communication needs"
+            }
+        },
+        "vmSize": {
+            "type": "string",
+            "metadata": {
+                "description": "Size of the SQL Server VMs to be created"
+            }
+        },
+        "vmCount": {
+            "type": "int",
+            "minValue": 2,
+            "maxValue": 9,
+            "metadata": {
+                "description": "Number of SQL Server VMs to be created in AlwaysOn Availability Group cluster (Min=2, Max=9)"
+            },
+            "defaultValue": 2
+        },
+        "vmDiskSize": {
+            "type": "int",
+            "minValue": 128,
+            "maxValue": 1023,
+            "metadata": {
+                "description": "Size of each data disk in GB on each SQL Server VM (Min=128, Max=1023)"
+            }
+        },
+        "vmDiskCount": {
+            "type": "int",
+            "minValue": 2,
+            "maxValue": 32,
+            "metadata": {
+                "description": "Number of data disks on each SQL Server VM (Min=2, Max=32). Ensure that the VM size you've selected will support this number of data disks."
+            }
+        },
+        "workloadType": {
+            "type": "string",
+            "defaultValue": "GENERAL"
+        },
+        "imagePublisher": {
+            "type": "string",
+            "defaultValue": "MicrosoftSQLServer"
+        },
+        "imageOffer": {
+            "type": "string",
+            "defaultValue": "SQL2016SP1-WS2016"
+        },
+        "imageSKU": {
+            "type": "string",
+            "defaultValue": "Enterprise"
+        },
+        "imageVersion": {
+            "type": "string",
+            "defaultValue": "latest"
+        },
+        "_artifactsLocation": {
+            "type": "string"
+        },
+        "_artifactsLocationSasToken": {
+            "type": "securestring"
+        }
+    },
+    "variables": {
+     "witnessStorageName": "[concat(parameters('namePrefix'),uniqueString(resourceGroup().id),'cw')]",
+    "witnessStorageType": "Standard_LRS",
+    "vmNamePrefix": "[concat(parameters('namePrefix'),'-sql-')]",
+    "clusterName": "[concat(variables('vmNamePrefix'),'c')]",
+    "vmLoopTemplateURL": "[uri(parameters('_artifactsLocation'), concat('nestedtemplates/newVM.json',parameters('_artifactsLocationSasToken')))]",
+    "ipLoopTemplateURL": "[uri(parameters('_artifactsLocation'), concat('nestedtemplates/getIpAddress.json',parameters('_artifactsLocationSasToken')))]",
+    "sqlPrepModulesURL": "[uri(parameters('_artifactsLocation'), concat('dsc/prep-sqlao.ps1.zip',parameters('_artifactsLocationSasToken')))]",
+    "sqlPrepFunction": "PrepSQLAO.ps1\\PrepSQLAO",
+    "sqlConfigModulesURL": "[uri(parameters('_artifactsLocation'), concat('dsc/config-sqlao.ps1.zip',parameters('_artifactsLocationSasToken')))]",
+    "sqlConfigFunction": "ConfigSQLAO.ps1\\ConfigSQLAO",
+    "agName": "[concat(variables('vmNamePrefix'),'ag')]",
+    "agListenerName": "[concat(variables('vmNamePrefix'),'agl')]",
+    "agEpName": "[concat(variables('vmNamePrefix'),'ha')]",
+    "albName": "[concat(variables('vmNamePrefix'),'alb')]",
+    "albPip": "[concat(variables('vmNamePrefix'),'albpip')]",
+    "albPipID": "[resourceId('Microsoft.Network/publicIPAddresses',variables('albPip'))]",
+    "albFE1": "[concat(variables('vmNamePrefix'),'albfe1')]",
+    "albBE": "[concat(variables('vmNamePrefix'),'albbe')]",
+    "albBEAddressPoolID": "[resourceId('Microsoft.Network/loadBalancers/backendAddressPools', variables('albName'), variables('albBE'))]",
+    "albBEPoolTemplateURL": "[uri(parameters('_artifactsLocation'), concat('nestedtemplates/albBEPool.json',parameters('_artifactsLocationSasToken')))]",
+    "albFEConfigID1": "[resourceId('Microsoft.Network/loadBalancers/frontendIPConfigurations',variables('albName'),variables('albFE1'))]",
+    "albProbe1": "[concat(variables('vmNamePrefix'),'albp1')]",
+    "albProbeID1": "[resourceId('Microsoft.Network/loadBalancers/probes',variables('albName'),variables('albProbe1'))]",
+    "lbName": "[concat(variables('vmNamePrefix'),'ilb')]",
+    "lbFE1": "[concat(variables('vmNamePrefix'),'ilbfe1')]",
+    "lbBE": "[concat(variables('vmNamePrefix'),'ilbbe')]",
+    "lbFEConfigID1": "[resourceId('Microsoft.Network/loadBalancers/frontendIPConfigurations',variables('lbName'),variables('lbFE1'))]",
+    "lbBEAddressPoolID": "[resourceId('Microsoft.Network/loadBalancers/backendAddressPools',variables('lbName'),variables('lbBE'))]",
+    "lbProbe1": "[concat(variables('vmNamePrefix'),'ilbp1')]",
+    "lbProbeID1": "[resourceId('Microsoft.Network/loadBalancers/probes',variables('lbName'), variables('lbProbe1'))]",
+    "lbBEPoolTemplateURL": "[uri(parameters('_artifactsLocation'), concat('nestedtemplates/lbBEPool.json',parameters('_artifactsLocationSasToken')))]",
+    "agListenerPort": 1433,
+    "agProbePort": 59999,
+    "snatTcpPort": 59998,
+    "snatProbePort": 3389,
+    "zones": ["1","2","3"]
+},
+    "resources": [
+        {
+            "type": "Microsoft.Compute/sshPublicKeys",
+            "apiVersion": "2023-03-01",
+            "name": "[parameters('sshPublicKeys_demo2_key_name')]",
+            "location": "eastus",
+            "properties": {
+                "publicKey": "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDx6n1+geyTryhDxAgPbx12Al1ZO0ELtKzRfKOYXeZG5bGrc6EeYEaA4JLY80CKnf+7t4sI0L8B9uLbhTwCv6uco+m5/Aj3yscVfXOjrggni5+56Lcs9qOKJapdP3wqwmIKdWVl064Dj9EfyyWkmnmbDZSE4xHLjqOHO8DCE0ah8wpZrJz+IgjE1aF498Zw5a7lBE1CkvGg1pazHFQycLovfKwmwkXv1PwTF2erWsI4G4Ayag7ZiluQHOJ1ehozpgc/kbqUmb2YeYbFWjwAaXpu2xwc5wj6V5wW5ljn7CWqf4PXX5o6yozNmV/7RIYW2wXmWhvl1ecYQcCl3jMb9ElCR7TbQYhKyDG+umC9s2GLa26V1Rne9AB5U3hGehJAntdanD59QV2zX07MPGabTOltcyEwkB0QB/n2mwZ/z6NvTUxPY8xrb/o/5+QcTV8b4mNc9ONShaWA0L0aPL4MvbmKYrSZYy4zQuQwRjmya0KE9iFb+gUr8pUYZ1p5IcdrwEk= generated-by-azure"
+            }
+        },
+        {
+            "type": "Microsoft.Network/networkSecurityGroups",
+            "apiVersion": "2023-09-01",
+            "name": "[parameters('networkSecurityGroups_demo2_nsg_name')]",
+            "location": "eastus",
+            "properties": {
+                "securityRules": [
+                    {
+                        "name": "SSH",
+                        "id": "[resourceId('Microsoft.Network/networkSecurityGroups/securityRules', parameters('networkSecurityGroups_demo2_nsg_name'), 'SSH')]",
+                        "type": "Microsoft.Network/networkSecurityGroups/securityRules",
+                        "properties": {
+                            "protocol": "TCP",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "22",
+                            "sourceAddressPrefix": "*",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 300,
+                            "direction": "Inbound",
+                            "sourcePortRanges": [],
+                            "destinationPortRanges": [],
+                            "sourceAddressPrefixes": [],
+                            "destinationAddressPrefixes": []
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "type": "Microsoft.Network/publicIPAddresses",
+            "apiVersion": "2023-09-01",
+            "name": "[parameters('publicIPAddresses_demo2_ip_name')]",
+            "location": "eastus",
+            "sku": {
+                "name": "Standard",
+                "tier": "Regional"
+            },
+            "zones": [
+                "1"
+            ],
+            "properties": {
+                "ipAddress": "48.216.248.33",
+                "publicIPAddressVersion": "IPv4",
+                "publicIPAllocationMethod": "Static",
+                "idleTimeoutInMinutes": 4,
+                "ipTags": []
+            }
+        },
+        {
+            "type": "Microsoft.Network/virtualNetworks",
+            "apiVersion": "2023-09-01",
+            "name": "[parameters('virtualNetworks_demo2_vnet_name')]",
+            "location": "eastus",
+            "properties": {
+                "addressSpace": {
+                    "addressPrefixes": [
+                        "10.0.0.0/16"
+                    ]
+                },
+                "subnets": [
+                    {
+                        "name": "default",
+                        "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('virtualNetworks_demo2_vnet_name'), 'default')]",
+                        "properties": {
+                            "addressPrefix": "10.0.0.0/24",
+                            "delegations": [],
+                            "privateEndpointNetworkPolicies": "Disabled",
+                            "privateLinkServiceNetworkPolicies": "Enabled"
+                        },
+                        "type": "Microsoft.Network/virtualNetworks/subnets"
+                    }
+                ],
+                "virtualNetworkPeerings": [],
+                "enableDdosProtection": false
+            }
+        },
+        {
+            "type": "Microsoft.Storage/storageAccounts",
+            "apiVersion": "2023-04-01",
+            "name": "[parameters('storageAccounts_20240102700111qufdwuke1_name')]",
+            "location": "eastus",
+            "sku": {
+                "name": "Standard_LRS",
+                "tier": "Standard"
+            },
+            "kind": "StorageV2",
+            "properties": {
+                "allowCrossTenantReplication": false,
+                "minimumTlsVersion": "TLS1_0",
+                "allowBlobPublicAccess": false,
+                "networkAcls": {
+                    "bypass": "AzureServices",
+                    "virtualNetworkRules": [],
+                    "ipRules": [],
+                    "defaultAction": "Allow"
+                },
+                "supportsHttpsTrafficOnly": true,
+                "encryption": {
+                    "services": {
+                        "file": {
+                            "keyType": "Account",
+                            "enabled": true
+                        },
+                        "blob": {
+                            "keyType": "Account",
+                            "enabled": true
+                        }
+                    },
+                    "keySource": "Microsoft.Storage"
+                },
+                "accessTier": "Hot"
+            }
+        },
+        {
+            "type": "Microsoft.Storage/storageAccounts",
+            "apiVersion": "2023-04-01",
+            "name": "[parameters('storageAccounts_2024dsge_name')]",
+            "location": "eastus",
+            "sku": {
+                "name": "Standard_LRS",
+                "tier": "Standard"
+            },
+            "kind": "StorageV2",
+            "properties": {
+                "allowCrossTenantReplication": false,
+                "minimumTlsVersion": "TLS1_0",
+                "allowBlobPublicAccess": false,
+                "networkAcls": {
+                    "bypass": "AzureServices",
+                    "virtualNetworkRules": [],
+                    "ipRules": [],
+                    "defaultAction": "Allow"
+                },
+                "supportsHttpsTrafficOnly": true,
+                "encryption": {
+                    "services": {
+                        "file": {
+                            "keyType": "Account",
+                            "enabled": true
+                        },
+                        "blob": {
+                            "keyType": "Account",
+                            "enabled": true
+                        }
+                    },
+                    "keySource": "Microsoft.Storage"
+                },
+                "accessTier": "Hot"
+            }
+        },
+        {
+            "type": "Microsoft.Storage/storageAccounts",
+            "apiVersion": "2023-04-01",
+            "name": "[parameters('storageAccounts_20ewgfw3333_name')]",
+            "location": "eastus",
+            "sku": {
+                "name": "Standard_LRS",
+                "tier": "Standard"
+            },
+            "kind": "StorageV2",
+            "properties": {
+                "allowCrossTenantReplication": false,
+                "minimumTlsVersion": "TLS1_0",
+                "allowBlobPublicAccess": false,
+                "networkAcls": {
+                    "bypass": "AzureServices",
+                    "virtualNetworkRules": [],
+                    "ipRules": [],
+                    "defaultAction": "Allow"
+                },
+                "supportsHttpsTrafficOnly": true,
+                "encryption": {
+                    "services": {
+                        "file": {
+                            "keyType": "Account",
+                            "enabled": true
+                        },
+                        "blob": {
+                            "keyType": "Account",
+                            "enabled": true
+                        }
+                    },
+                    "keySource": "Microsoft.Storage"
+                },
+                "accessTier": "Hot"
+            }
+        },
+        {
+            "type": "Microsoft.Storage/storageAccounts",
+            "apiVersion": "2023-04-01",
+            "name": "[parameters('storageAccounts_20wefw7002222_name')]",
+            "location": "eastus",
+            "sku": {
+                "name": "Standard_LRS",
+                "tier": "Standard"
+            },
+            "kind": "StorageV2",
+            "properties": {
+                "allowCrossTenantReplication": false,
+                "minimumTlsVersion": "TLS1_0",
+                "allowBlobPublicAccess": false,
+                "networkAcls": {
+                    "bypass": "AzureServices",
+                    "virtualNetworkRules": [],
+                    "ipRules": [],
+                    "defaultAction": "Allow"
+                },
+                "supportsHttpsTrafficOnly": true,
+                "encryption": {
+                    "services": {
+                        "file": {
+                            "keyType": "Account",
+                            "enabled": true
+                        },
+                        "blob": {
+                            "keyType": "Account",
+                            "enabled": true
+                        }
+                    },
+                    "keySource": "Microsoft.Storage"
+                },
+                "accessTier": "Hot"
+            }
+        },
+        {
+            "type": "Microsoft.Compute/virtualMachines",
+            "apiVersion": "2023-03-01",
+            "name": "[parameters('virtualMachines_demo2_name')]",
+            "location": "eastus",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/networkInterfaces', parameters('networkInterfaces_demo2321_z1_name'))]"
+            ],
+            "zones": [
+                "1"
+            ],
+            "properties": {
+                "hardwareProfile": {
+                    "vmSize": "Standard_D4s_v3"
+                },
+                "additionalCapabilities": {
+                    "hibernationEnabled": false
+                },
+                "storageProfile": {
+                    "imageReference": {
+                        "publisher": "canonical",
+                        "offer": "0001-com-ubuntu-server-focal",
+                        "sku": "20_04-lts-gen2",
+                        "version": "latest"
+                    },
+                    "osDisk": {
+                        "osType": "Linux",
+                        "name": "[concat(parameters('virtualMachines_demo2_name'), '_disk1_d7063ce49b8249b99828810950d25b3a')]",
+                        "createOption": "FromImage",
+                        "caching": "ReadWrite",
+                        "managedDisk": {
+                            "storageAccountType": "Premium_LRS",
+                            "id": "[resourceId('Microsoft.Compute/disks', concat(parameters('virtualMachines_demo2_name'), '_disk1_d7063ce49b8249b99828810950d25b3a'))]"
+                        },
+                        "deleteOption": "Delete",
+                        "diskSizeGB": 30
+                    },
+                    "dataDisks": [],
+                    "diskControllerType": "SCSI"
+                },
+                "osProfile": {
+                    "computerName": "[parameters('virtualMachines_demo2_name')]",
+                    "adminUsername": "azureuser",
+                    "linuxConfiguration": {
+                        "disablePasswordAuthentication": true,
+                        "ssh": {
+                            "publicKeys": [
+                                {
+                                    "path": "/home/azureuser/.ssh/authorized_keys",
+                                    "keyData": "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDx6n1+geyTryhDxAgPbx12Al1ZO0ELtKzRfKOYXeZG5bGrc6EeYEaA4JLY80CKnf+7t4sI0L8B9uLbhTwCv6uco+m5/Aj3yscVfXOjrggni5+56Lcs9qOKJapdP3wqwmIKdWVl064Dj9EfyyWkmnmbDZSE4xHLjqOHO8DCE0ah8wpZrJz+IgjE1aF498Zw5a7lBE1CkvGg1pazHFQycLovfKwmwkXv1PwTF2erWsI4G4Ayag7ZiluQHOJ1ehozpgc/kbqUmb2YeYbFWjwAaXpu2xwc5wj6V5wW5ljn7CWqf4PXX5o6yozNmV/7RIYW2wXmWhvl1ecYQcCl3jMb9ElCR7TbQYhKyDG+umC9s2GLa26V1Rne9AB5U3hGehJAntdanD59QV2zX07MPGabTOltcyEwkB0QB/n2mwZ/z6NvTUxPY8xrb/o/5+QcTV8b4mNc9ONShaWA0L0aPL4MvbmKYrSZYy4zQuQwRjmya0KE9iFb+gUr8pUYZ1p5IcdrwEk= generated-by-azure"
+                                }
+                            ]
+                        },
+                        "provisionVMAgent": true,
+                        "patchSettings": {
+                            "patchMode": "AutomaticByPlatform",
+                            "automaticByPlatformSettings": {
+                                "rebootSetting": "IfRequired",
+                                "bypassPlatformSafetyChecksOnUserSchedule": false
+                            },
+                            "assessmentMode": "ImageDefault"
+                        },
+                        "enableVMAgentPlatformUpdates": false
+                    },
+                    "secrets": [],
+                    "allowExtensionOperations": true,
+                    "requireGuestProvisionSignal": true
+                },
+                "securityProfile": {
+                    "uefiSettings": {
+                        "secureBootEnabled": true,
+                        "vTpmEnabled": true
+                    },
+                    "securityType": "TrustedLaunch"
+                },
+                "networkProfile": {
+                    "networkInterfaces": [
+                        {
+                            "id": "[resourceId('Microsoft.Network/networkInterfaces', parameters('networkInterfaces_demo2321_z1_name'))]",
+                            "properties": {
+                                "deleteOption": "Detach"
+                            }
+                        }
+                    ]
+                },
+                "diagnosticsProfile": {
+                    "bootDiagnostics": {
+                        "enabled": true
+                    }
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Network/networkSecurityGroups/securityRules",
+            "apiVersion": "2023-09-01",
+            "name": "[concat(parameters('networkSecurityGroups_demo2_nsg_name'), '/SSH')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroups_demo2_nsg_name'))]"
+            ],
+            "properties": {
+                "protocol": "TCP",
+                "sourcePortRange": "*",
+                "destinationPortRange": "22",
+                "sourceAddressPrefix": "*",
+                "destinationAddressPrefix": "*",
+                "access": "Allow",
+                "priority": 300,
+                "direction": "Inbound",
+                "sourcePortRanges": [],
+                "destinationPortRanges": [],
+                "sourceAddressPrefixes": [],
+                "destinationAddressPrefixes": []
+            }
+        },
+        {
+            "type": "Microsoft.Network/virtualNetworks/subnets",
+            "apiVersion": "2023-09-01",
+            "name": "[concat(parameters('virtualNetworks_demo2_vnet_name'), '/default')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworks_demo2_vnet_name'))]"
+            ],
+            "properties": {
+                "addressPrefix": "10.0.0.0/24",
+                "delegations": [],
+                "privateEndpointNetworkPolicies": "Disabled",
+                "privateLinkServiceNetworkPolicies": "Enabled"
+            }
+        },
+        {
+            "type": "Microsoft.Storage/storageAccounts/blobServices",
+            "apiVersion": "2023-04-01",
+            "name": "[concat(parameters('storageAccounts_20240102700111qufdwuke1_name'), '/default')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccounts_20240102700111qufdwuke1_name'))]"
+            ],
+            "sku": {
+                "name": "Standard_LRS",
+                "tier": "Standard"
+            },
+            "properties": {
+                "cors": {
+                    "corsRules": []
+                },
+                "deleteRetentionPolicy": {
+                    "allowPermanentDelete": false,
+                    "enabled": false
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Storage/storageAccounts/blobServices",
+            "apiVersion": "2023-04-01",
+            "name": "[concat(parameters('storageAccounts_2024dsge_name'), '/default')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccounts_2024dsge_name'))]"
+            ],
+            "sku": {
+                "name": "Standard_LRS",
+                "tier": "Standard"
+            },
+            "properties": {
+                "cors": {
+                    "corsRules": []
+                },
+                "deleteRetentionPolicy": {
+                    "allowPermanentDelete": false,
+                    "enabled": false
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Storage/storageAccounts/blobServices",
+            "apiVersion": "2023-04-01",
+            "name": "[concat(parameters('storageAccounts_20ewgfw3333_name'), '/default')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccounts_20ewgfw3333_name'))]"
+            ],
+            "sku": {
+                "name": "Standard_LRS",
+                "tier": "Standard"
+            },
+            "properties": {
+                "cors": {
+                    "corsRules": []
+                },
+                "deleteRetentionPolicy": {
+                    "allowPermanentDelete": false,
+                    "enabled": false
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Storage/storageAccounts/blobServices",
+            "apiVersion": "2023-04-01",
+            "name": "[concat(parameters('storageAccounts_20wefw7002222_name'), '/default')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccounts_20wefw7002222_name'))]"
+            ],
+            "sku": {
+                "name": "Standard_LRS",
+                "tier": "Standard"
+            },
+            "properties": {
+                "cors": {
+                    "corsRules": []
+                },
+                "deleteRetentionPolicy": {
+                    "allowPermanentDelete": false,
+                    "enabled": false
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Storage/storageAccounts/fileServices",
+            "apiVersion": "2023-04-01",
+            "name": "[concat(parameters('storageAccounts_20240102700111qufdwuke1_name'), '/default')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccounts_20240102700111qufdwuke1_name'))]"
+            ],
+            "sku": {
+                "name": "Standard_LRS",
+                "tier": "Standard"
+            },
+            "properties": {
+                "protocolSettings": {
+                    "smb": {}
+                },
+                "cors": {
+                    "corsRules": []
+                },
+                "shareDeleteRetentionPolicy": {
+                    "enabled": true,
+                    "days": 7
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Storage/storageAccounts/fileServices",
+            "apiVersion": "2023-04-01",
+            "name": "[concat(parameters('storageAccounts_2024dsge_name'), '/default')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccounts_2024dsge_name'))]"
+            ],
+            "sku": {
+                "name": "Standard_LRS",
+                "tier": "Standard"
+            },
+            "properties": {
+                "protocolSettings": {
+                    "smb": {}
+                },
+                "cors": {
+                    "corsRules": []
+                },
+                "shareDeleteRetentionPolicy": {
+                    "enabled": true,
+                    "days": 7
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Storage/storageAccounts/fileServices",
+            "apiVersion": "2023-04-01",
+            "name": "[concat(parameters('storageAccounts_20ewgfw3333_name'), '/default')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccounts_20ewgfw3333_name'))]"
+            ],
+            "sku": {
+                "name": "Standard_LRS",
+                "tier": "Standard"
+            },
+            "properties": {
+                "protocolSettings": {
+                    "smb": {}
+                },
+                "cors": {
+                    "corsRules": []
+                },
+                "shareDeleteRetentionPolicy": {
+                    "enabled": true,
+                    "days": 7
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Storage/storageAccounts/fileServices",
+            "apiVersion": "2023-04-01",
+            "name": "[concat(parameters('storageAccounts_20wefw7002222_name'), '/default')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccounts_20wefw7002222_name'))]"
+            ],
+            "sku": {
+                "name": "Standard_LRS",
+                "tier": "Standard"
+            },
+            "properties": {
+                "protocolSettings": {
+                    "smb": {}
+                },
+                "cors": {
+                    "corsRules": []
+                },
+                "shareDeleteRetentionPolicy": {
+                    "enabled": true,
+                    "days": 7
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Storage/storageAccounts/queueServices",
+            "apiVersion": "2023-04-01",
+            "name": "[concat(parameters('storageAccounts_20240102700111qufdwuke1_name'), '/default')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccounts_20240102700111qufdwuke1_name'))]"
+            ],
+            "properties": {
+                "cors": {
+                    "corsRules": []
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Storage/storageAccounts/queueServices",
+            "apiVersion": "2023-04-01",
+            "name": "[concat(parameters('storageAccounts_2024dsge_name'), '/default')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccounts_2024dsge_name'))]"
+            ],
+            "properties": {
+                "cors": {
+                    "corsRules": []
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Storage/storageAccounts/queueServices",
+            "apiVersion": "2023-04-01",
+            "name": "[concat(parameters('storageAccounts_20ewgfw3333_name'), '/default')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccounts_20ewgfw3333_name'))]"
+            ],
+            "properties": {
+                "cors": {
+                    "corsRules": []
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Storage/storageAccounts/queueServices",
+            "apiVersion": "2023-04-01",
+            "name": "[concat(parameters('storageAccounts_20wefw7002222_name'), '/default')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccounts_20wefw7002222_name'))]"
+            ],
+            "properties": {
+                "cors": {
+                    "corsRules": []
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Storage/storageAccounts/tableServices",
+            "apiVersion": "2023-04-01",
+            "name": "[concat(parameters('storageAccounts_20240102700111qufdwuke1_name'), '/default')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccounts_20240102700111qufdwuke1_name'))]"
+            ],
+            "properties": {
+                "cors": {
+                    "corsRules": []
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Storage/storageAccounts/tableServices",
+            "apiVersion": "2023-04-01",
+            "name": "[concat(parameters('storageAccounts_2024dsge_name'), '/default')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccounts_2024dsge_name'))]"
+            ],
+            "properties": {
+                "cors": {
+                    "corsRules": []
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Storage/storageAccounts/tableServices",
+            "apiVersion": "2023-04-01",
+            "name": "[concat(parameters('storageAccounts_20ewgfw3333_name'), '/default')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccounts_20ewgfw3333_name'))]"
+            ],
+            "properties": {
+                "cors": {
+                    "corsRules": []
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Storage/storageAccounts/tableServices",
+            "apiVersion": "2023-04-01",
+            "name": "[concat(parameters('storageAccounts_20wefw7002222_name'), '/default')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccounts_20wefw7002222_name'))]"
+            ],
+            "properties": {
+                "cors": {
+                    "corsRules": []
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Network/networkInterfaces",
+            "apiVersion": "2023-09-01",
+            "name": "[parameters('networkInterfaces_demo2321_z1_name')]",
+            "location": "eastus",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/publicIPAddresses', parameters('publicIPAddresses_demo2_ip_name'))]",
+                "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('virtualNetworks_demo2_vnet_name'), 'default')]",
+                "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroups_demo2_nsg_name'))]"
+            ],
+            "kind": "Regular",
+            "properties": {
+                "ipConfigurations": [
+                    {
+                        "name": "ipconfig1",
+                        "id": "[concat(resourceId('Microsoft.Network/networkInterfaces', parameters('networkInterfaces_demo2321_z1_name')), '/ipConfigurations/ipconfig1')]",
+                        "etag": "W/\"4a59a471-97f6-418b-a0b1-8da0912dbb5e\"",
+                        "type": "Microsoft.Network/networkInterfaces/ipConfigurations",
+                        "properties": {
+                            "provisioningState": "Succeeded",
+                            "privateIPAddress": "10.0.0.4",
+                            "privateIPAllocationMethod": "Dynamic",
+                            "publicIPAddress": {
+                                "id": "[resourceId('Microsoft.Network/publicIPAddresses', parameters('publicIPAddresses_demo2_ip_name'))]",
+                                "properties": {
+                                    "deleteOption": "Detach"
+                                }
+                            },
+                            "subnet": {
+                                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('virtualNetworks_demo2_vnet_name'), 'default')]"
+                            },
+                            "primary": true,
+                            "privateIPAddressVersion": "IPv4"
+                        }
+                    }
+                ],
+                "dnsSettings": {
+                    "dnsServers": []
+                },
+                "enableAcceleratedNetworking": true,
+                "enableIPForwarding": false,
+                "disableTcpStateTracking": false,
+                "networkSecurityGroup": {
+                    "id": "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroups_demo2_nsg_name'))]"
+                },
+                "nicType": "Standard",
+                "auxiliaryMode": "None",
+                "auxiliarySku": "None"
+            }
+        },
+        {
+            "type": "Microsoft.Compute/sshPublicKeys",
+            "apiVersion": "2023-03-01",
+            "name": "[parameters('sshPublicKeys_Demo1_key_name')]",
+            "location": "eastus",
+            "properties": {
+                "publicKey": "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC7oSFYBIFCY87SwG5PczrvS/wh4/4zOlGe0iep12NF4wzceSMtiLRSTgqfoIP7guymKAKaS+r3/Pm/Yu3Pw96hnzVZ+fL/Z6Y44/wnn77PmGz1sE/2Gjyjv0RGdYItucMlLY1qJpMIxuosiwdR86XUWsrEPCX41KmAwmq0jRpW3pqUsFy17/6TlFvUW7upmh7BxKlIZl39r7+62FQCu+sTeU2VXpdWrAo3l9JeylrRFaUu2K6y5P4twAIicFWcfk65XYsg1fKzNXqkSLW9FW3J32D5YE3nFTnZP7L2vmVYY/4xjYj/wfvC6Spl3s7mj3LuV5vEzJuAAgaUQv0BcRDkH2D3zgYHAhjMrDjKby2rtKFwxyqGYujTeAsBOO2dhtbLY6tAbvCzRb0i2ev2HY365N/azwpjkABSizLrvK92P95esVlViUfqLqYiTCc5uvqg0+E9PIqIazl+GKFDUS6khPH3M41xNX2b62Dpc+7R21Hdrsd9BnJZD8OBSsXPL4U= generated-by-azure"
+            }
+        },
+        {
+            "type": "Microsoft.Network/networkSecurityGroups",
+            "apiVersion": "2023-09-01",
+            "name": "[parameters('networkSecurityGroups_Demo1_nsg_name')]",
+            "location": "eastus",
+            "properties": {
+                "securityRules": [
+                    {
+                        "name": "SSH",
+                        "id": "[resourceId('Microsoft.Network/networkSecurityGroups/securityRules', parameters('networkSecurityGroups_Demo1_nsg_name'), 'SSH')]",
+                        "type": "Microsoft.Network/networkSecurityGroups/securityRules",
+                        "properties": {
+                            "protocol": "TCP",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "22",
+                            "sourceAddressPrefix": "*",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 300,
+                            "direction": "Inbound",
+                            "sourcePortRanges": [],
+                            "destinationPortRanges": [],
+                            "sourceAddressPrefixes": [],
+                            "destinationAddressPrefixes": []
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "type": "Microsoft.Network/publicIPAddresses",
+            "apiVersion": "2023-09-01",
+            "name": "[parameters('publicIPAddresses_Demo1_ip_name')]",
+            "location": "eastus",
+            "sku": {
+                "name": "Standard",
+                "tier": "Regional"
+            },
+            "zones": [
+                "1"
+            ],
+            "properties": {
+                "ipAddress": "4.236.191.153",
+                "publicIPAddressVersion": "IPv4",
+                "publicIPAllocationMethod": "Static",
+                "idleTimeoutInMinutes": 4,
+                "ipTags": []
+            }
+        },
+        {
+            "type": "Microsoft.Network/virtualNetworks",
+            "apiVersion": "2023-09-01",
+            "name": "[parameters('virtualNetworks_Demo1_vnet_name')]",
+            "location": "eastus",
+            "properties": {
+                "addressSpace": {
+                    "addressPrefixes": [
+                        "10.0.0.0/16"
+                    ]
+                },
+                "subnets": [
+                    {
+                        "name": "default",
+                        "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('virtualNetworks_Demo1_vnet_name'), 'default')]",
+                        "properties": {
+                            "addressPrefix": "10.0.0.0/24",
+                            "delegations": [],
+                            "privateEndpointNetworkPolicies": "Disabled",
+                            "privateLinkServiceNetworkPolicies": "Enabled"
+                        },
+                        "type": "Microsoft.Network/virtualNetworks/subnets"
+                    }
+                ],
+                "virtualNetworkPeerings": [],
+                "enableDdosProtection": false
+            }
+        },
+        {
+            "type": "Microsoft.Compute/virtualMachines",
+            "apiVersion": "2023-03-01",
+            "name": "[parameters('virtualMachines_Demo1_name')]",
+            "location": "eastus",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/networkInterfaces', parameters('networkInterfaces_demo1412_z1_name'))]"
+            ],
+            "zones": [
+                "1"
+            ],
+            "properties": {
+                "hardwareProfile": {
+                    "vmSize": "Standard_D4s_v3"
+                },
+                "additionalCapabilities": {
+                    "hibernationEnabled": false
+                },
+                "storageProfile": {
+                    "imageReference": {
+                        "publisher": "canonical",
+                        "offer": "0001-com-ubuntu-server-focal",
+                        "sku": "20_04-lts-gen2",
+                        "version": "latest"
+                    },
+                    "osDisk": {
+                        "osType": "Linux",
+                        "name": "[concat(parameters('virtualMachines_Demo1_name'), '_disk1_9691ffab481f40a3bb2a6c66bc68dd98')]",
+                        "createOption": "FromImage",
+                        "caching": "ReadWrite",
+                        "managedDisk": {
+                            "storageAccountType": "Premium_LRS",
+                            "id": "[resourceId('Microsoft.Compute/disks', concat(parameters('virtualMachines_Demo1_name'), '_disk1_9691ffab481f40a3bb2a6c66bc68dd98'))]"
+                        },
+                        "deleteOption": "Delete",
+                        "diskSizeGB": 30
+                    },
+                    "dataDisks": [],
+                    "diskControllerType": "SCSI"
+                },
+                "osProfile": {
+                    "computerName": "[parameters('virtualMachines_Demo1_name')]",
+                    "adminUsername": "azureuser",
+                    "linuxConfiguration": {
+                        "disablePasswordAuthentication": true,
+                        "ssh": {
+                            "publicKeys": [
+                                {
+                                    "path": "/home/azureuser/.ssh/authorized_keys",
+                                    "keyData": "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC7oSFYBIFCY87SwG5PczrvS/wh4/4zOlGe0iep12NF4wzceSMtiLRSTgqfoIP7guymKAKaS+r3/Pm/Yu3Pw96hnzVZ+fL/Z6Y44/wnn77PmGz1sE/2Gjyjv0RGdYItucMlLY1qJpMIxuosiwdR86XUWsrEPCX41KmAwmq0jRpW3pqUsFy17/6TlFvUW7upmh7BxKlIZl39r7+62FQCu+sTeU2VXpdWrAo3l9JeylrRFaUu2K6y5P4twAIicFWcfk65XYsg1fKzNXqkSLW9FW3J32D5YE3nFTnZP7L2vmVYY/4xjYj/wfvC6Spl3s7mj3LuV5vEzJuAAgaUQv0BcRDkH2D3zgYHAhjMrDjKby2rtKFwxyqGYujTeAsBOO2dhtbLY6tAbvCzRb0i2ev2HY365N/azwpjkABSizLrvK92P95esVlViUfqLqYiTCc5uvqg0+E9PIqIazl+GKFDUS6khPH3M41xNX2b62Dpc+7R21Hdrsd9BnJZD8OBSsXPL4U= generated-by-azure"
+                                }
+                            ]
+                        },
+                        "provisionVMAgent": true,
+                        "patchSettings": {
+                            "patchMode": "AutomaticByPlatform",
+                            "automaticByPlatformSettings": {
+                                "rebootSetting": "IfRequired",
+                                "bypassPlatformSafetyChecksOnUserSchedule": false
+                            },
+                            "assessmentMode": "ImageDefault"
+                        },
+                        "enableVMAgentPlatformUpdates": false
+                    },
+                    "secrets": [],
+                    "allowExtensionOperations": true,
+                    "requireGuestProvisionSignal": true
+                },
+                "securityProfile": {
+                    "uefiSettings": {
+                        "secureBootEnabled": true,
+                        "vTpmEnabled": true
+                    },
+                    "securityType": "TrustedLaunch"
+                },
+                "networkProfile": {
+                    "networkInterfaces": [
+                        {
+                            "id": "[resourceId('Microsoft.Network/networkInterfaces', parameters('networkInterfaces_demo1412_z1_name'))]",
+                            "properties": {
+                                "deleteOption": "Detach"
+                            }
+                        }
+                    ]
+                },
+                "diagnosticsProfile": {
+                    "bootDiagnostics": {
+                        "enabled": true
+                    }
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Network/networkSecurityGroups/securityRules",
+            "apiVersion": "2023-09-01",
+            "name": "[concat(parameters('networkSecurityGroups_Demo1_nsg_name'), '/SSH')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroups_Demo1_nsg_name'))]"
+            ],
+            "properties": {
+                "protocol": "TCP",
+                "sourcePortRange": "*",
+                "destinationPortRange": "22",
+                "sourceAddressPrefix": "*",
+                "destinationAddressPrefix": "*",
+                "access": "Allow",
+                "priority": 300,
+                "direction": "Inbound",
+                "sourcePortRanges": [],
+                "destinationPortRanges": [],
+                "sourceAddressPrefixes": [],
+                "destinationAddressPrefixes": []
+            }
+        },
+        {
+            "type": "Microsoft.Network/virtualNetworks/subnets",
+            "apiVersion": "2023-09-01",
+            "name": "[concat(parameters('virtualNetworks_Demo1_vnet_name'), '/default')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworks_Demo1_vnet_name'))]"
+            ],
+            "properties": {
+                "addressPrefix": "10.0.0.0/24",
+                "delegations": [],
+                "privateEndpointNetworkPolicies": "Disabled",
+                "privateLinkServiceNetworkPolicies": "Enabled"
+            }
+        },
+        {
+            "type": "Microsoft.Network/networkInterfaces",
+            "apiVersion": "2023-09-01",
+            "name": "[parameters('networkInterfaces_demo1412_z1_name')]",
+            "location": "eastus",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/publicIPAddresses', parameters('publicIPAddresses_Demo1_ip_name'))]",
+                "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('virtualNetworks_Demo1_vnet_name'), 'default')]",
+                "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroups_Demo1_nsg_name'))]"
+            ],
+            "kind": "Regular",
+            "properties": {
+                "ipConfigurations": [
+                    {
+                        "name": "ipconfig1",
+                        "id": "[concat(resourceId('Microsoft.Network/networkInterfaces', parameters('networkInterfaces_demo1412_z1_name')), '/ipConfigurations/ipconfig1')]",
+                        "etag": "W/\"64c8a6d0-2afc-4e95-b787-5ad921cd5a46\"",
+                        "type": "Microsoft.Network/networkInterfaces/ipConfigurations",
+                        "properties": {
+                            "provisioningState": "Succeeded",
+                            "privateIPAddress": "10.0.0.4",
+                            "privateIPAllocationMethod": "Dynamic",
+                            "publicIPAddress": {
+                                "id": "[resourceId('Microsoft.Network/publicIPAddresses', parameters('publicIPAddresses_Demo1_ip_name'))]",
+                                "properties": {
+                                    "deleteOption": "Detach"
+                                }
+                            },
+                            "subnet": {
+                                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('virtualNetworks_Demo1_vnet_name'), 'default')]"
+                            },
+                            "primary": true,
+                            "privateIPAddressVersion": "IPv4"
+                        }
+                    }
+                ],
+                "dnsSettings": {
+                    "dnsServers": []
+                },
+                "enableAcceleratedNetworking": true,
+                "enableIPForwarding": false,
+                "disableTcpStateTracking": false,
+                "networkSecurityGroup": {
+                    "id": "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroups_Demo1_nsg_name'))]"
+                },
+                "nicType": "Standard",
+                "auxiliaryMode": "None",
+                "auxiliarySku": "None"
+            }
+        },
+        {
+            "type": "Microsoft.Storage/storageAccounts",
+            "name": "[variables('witnessStorageName')]",
+            "apiVersion": "2019-06-01",
+            "location": "[parameters('location')]",
+            "sku": {
+                "name": "[variables('witnessStorageType')]"
+            },
+            "kind": "Storage"
+        },
+        {
+            "apiVersion": "2020-08-01",
+            "name": "[variables('lbName')]",
+            "type": "Microsoft.Network/loadBalancers",
+            "location": "[parameters('location')]",
+            "sku": {
+                "name": "Standard"
+            },
+            "properties": {
+                "frontendIPConfigurations": [
+                    {
+                        "name": "[variables('lbFE1')]",
+                        "properties": {
+                            "privateIPAllocationMethod": "Dynamic",
+                            "subnet": {
+                                "id": "[parameters('subnetId')]"
+                            }
+                        }
+                    }
+                ],
+                "backendAddressPools": [
+                    {
+                        "name": "[variables('lbBE')]"
+                    }
+                ],
+                "loadBalancingRules": [
+                    {
+                        "name": "[variables('agListenerName')]",
+                        "properties": {
+                            "frontendIPConfiguration": {
+                                "id": "[variables('lbFEConfigID1')]"
+                            },
+                            "backendAddressPool": {
+                                "id": "[variables('lbBEAddressPoolID')]"
+                            },
+                            "probe": {
+                                "id": "[variables('lbProbeID1')]"
+                            },
+                            "protocol": "Tcp",
+                            "frontendPort": "[variables('agListenerPort')]",
+                            "backendPort": "[variables('agListenerPort')]",
+                            "enableFloatingIP": true
+                        }
+                    }
+                ],
+                "probes": [
+                    {
+                        "name": "[variables('lbProbe1')]",
+                        "properties": {
+                            "protocol": "Tcp",
+                            "port": "[variables('agProbePort')]",
+                            "intervalInSeconds": 5,
+                            "numberOfProbes": 2
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "apiVersion": "2020-08-01",
+            "type": "Microsoft.Network/publicIPAddresses",
+            "name": "[variables('albPip')]",
+            "location": "[parameters('location')]",
+            "condition": "[equals(parameters('enableOutboundInternet'),'Yes')]",
+            "sku": {
+                "name": "Standard"
+            },
+            "properties": {
+                "publicIPAllocationMethod": "Static"
+            }
+        },
+        {
+            "apiVersion": "2020-08-01",
+            "name": "[variables('albName')]",
+            "type": "Microsoft.Network/loadBalancers",
+            "location": "[parameters('location')]",
+            "condition": "[equals(parameters('enableOutboundInternet'),'Yes')]",
+            "dependsOn": [
+                "[variables('albPip')]"
+            ],
+            "sku": {
+                "name": "Standard"
+            },
+            "properties": {
+                "frontendIPConfigurations": [
+                    {
+                        "name": "[variables('albFE1')]",
+                        "properties": {
+                            "publicIPAddress": {
+                                "id": "[variables('albPipID')]"
+                            }
+                        }
+                    }
+                ],
+                "backendAddressPools": [
+                    {
+                        "name": "[variables('albBE')]"
+                    }
+                ],
+                "loadBalancingRules": [
+                    {
+                        "name": "outbound-snat-rule",
+                        "properties": {
+                            "frontendIPConfiguration": {
+                                "id": "[variables('albFEConfigID1')]"
+                            },
+                            "backendAddressPool": {
+                                "id": "[variables('albBEAddressPoolID')]"
+                            },
+                            "probe": {
+                                "id": "[variables('albProbeID1')]"
+                            },
+                            "protocol": "Tcp",
+                            "frontendPort": "[variables('snatTcpPort')]",
+                            "backendPort": "[variables('snatTcpPort')]",
+                            "enableFloatingIP": false
+                        }
+                    }
+                ],
+                "probes": [
+                    {
+                        "name": "[variables('albProbe1')]",
+                        "properties": {
+                            "protocol": "Tcp",
+                            "port": "[variables('snatProbePort')]",
+                            "intervalInSeconds": 5,
+                            "numberOfProbes": 2
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "name": "[concat(variables('vmNamePrefix'), copyindex(), '-nic')]",
+            "type": "Microsoft.Network/networkInterfaces",
+            "location": "[parameters('location')]",
+            "apiVersion": "2020-08-01",
+            "copy": {
+                "name": "nicLoop",
+                "count": "[parameters('vmCount')]"
+            },
+            "properties": {
+                "ipConfigurations": [
+                    {
+                        "name": "ipconfig1",
+                        "properties": {
+                            "privateIPAllocationMethod": "Dynamic",
+                            "subnet": {
+                                "id": "[parameters('subnetId')]"
+                            },           
+                            "primary": true
+                        }
+                    },
+                    {
+                        "name": "ipconfig2",
+                        "properties": {
+                            "privateIPAllocationMethod": "Dynamic",
+                            "subnet": {
+                                "id": "[parameters('subnetId')]"
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "2020-10-01",
+            "name": "[concat(variables('vmNamePrefix'),'0-clusterIp')]",
+            "dependsOn": [
+                "nicLoop"
+            ],
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[variables('ipLoopTemplateURL')]"
+                },
+                "parameters": {
+                    "ipConfig": {
+                        "value": "[reference(resourceId('Microsoft.Network/networkInterfaces', concat(variables('vmNamePrefix'), '0-nic'))).ipConfigurations[1].properties.privateIPAddress]"
+                    }
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "2020-10-01",
+            "copy": {
+                "name": "clusterIpLoop",
+                "count": "[sub(parameters('vmCount'),1)]"
+            },
+            "name": "[concat(variables('vmNamePrefix'),copyIndex(1),'-clusterIp')]",
+            "dependsOn": [
+                "nicLoop",
+                "[resourceId('Microsoft.Resources/deployments', concat(variables('vmNamePrefix'),'0-clusterIp'))]"
+            ],
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[variables('ipLoopTemplateURL')]"
+                },
+                "parameters": {
+                    "ipConfig": {
+                        "value": "[reference(resourceId('Microsoft.Network/networkInterfaces',concat(variables('vmNamePrefix'), copyIndex(1), '-nic'))).ipConfigurations[1].properties.privateIPAddress]"
+                    },
+                    "ipAddresses": {
+                        "value": "[reference(resourceId('Microsoft.Resources/deployments', concat(variables('vmNamePrefix'),copyIndex(),'-clusterIp'))).outputs.result.value]"
+                    }
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "2020-10-01",
+            "copy": {
+                "name": "virtualMachineLoop",
+                "count": "[parameters('vmCount')]"
+            },
+            "name": "[concat(variables('vmNamePrefix'),copyindex(),'-newVM')]",
+            "dependsOn": [
+                "nicLoop"
+            ],
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[variables('vmLoopTemplateURL')]"
+                },
+                "parameters": {
+                    "location": {
+                        "value": "[parameters('location')]"
+                    },
+                    "vmName": {
+                        "value": "[concat(variables('vmNamePrefix'), copyindex())]"
+                    },
+                    "vmSize": {
+                        "value": "[parameters('vmSize')]"
+                    },
+                    "vmDiskCount": {
+                        "value": "[parameters('vmDiskCount')]"
+                    },
+                    "vmDiskSize": {
+                        "value": "[parameters('vmDiskSize')]"
+                    },
+                    "adminUsername": {
+                        "value": "[parameters('adminUsername')]"
+                    },
+                    "adminPassword": {
+                        "value": "[parameters('adminPassword')]"
+                    },
+                    "imagePublisher": {
+                        "value": "[parameters('imagePublisher')]"
+                    },
+                    "imageOffer": {
+                        "value": "[parameters('imageOffer')]"
+                    },
+                    "imageSKU": {
+                        "value": "[parameters('imageSKU')]"
+                    },
+                    "imageVersion": {
+                        "value": "[parameters('imageVersion')]"
+                    },
+                    "zones": {
+                        "value": "[take(skip(variables('zones'),mod(copyIndex(),length(variables('zones')))),1)]"
+                    }
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Compute/virtualMachines/extensions",
+            "name": "[concat(variables('vmNamePrefix'),copyindex(1),'/sqlPrep')]",
+            "apiVersion": "2020-12-01",
+            "location": "[parameters('location')]",
+            "dependsOn": [
+                "virtualMachineLoop"
+            ],
+            "copy": {
+                "name": "virtualMachineExtensionLoop",
+                "count": "[sub(parameters('vmCount'),1)]"
+            },
+            "properties": {
+                "publisher": "Microsoft.Powershell",
+                "type": "DSC",
+                "typeHandlerVersion": "2.71",
+                "autoUpgradeMinorVersion": true,
+                "settings": {
+                    "modulesUrl": "[variables('sqlPrepModulesURL')]",
+                    "configurationFunction": "[variables('sqlPrepFunction')]",
+                    "properties": {
+                        "domainName": "[parameters('domainName')]",
+                        "adminCreds": {
+                            "userName": "[parameters('adminUserName')]",
+                            "password": "PrivateSettingsRef:adminPassword"
+                        },
+                        "sqlServiceCreds": {
+                            "userName": "[parameters('sqlServiceAccount')]",
+                            "password": "PrivateSettingsRef:sqlServicePassword"
+                        },
+                        "numberOfDisks": "[parameters('vmDiskCount')]",
+                        "workloadType": "[parameters('workloadType')]",
+                        "databaseEnginePort": "[variables('agListenerPort')]",
+                        "probePortNumber": "[variables('agProbePort')]"
+                    }
+                },
+                "protectedSettings": {
+                    "items": {
+                        "adminPassword": "[parameters('adminPassword')]",
+                        "sqlServicePassword": "[parameters('sqlServicePassword')]"
+                    }
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Compute/virtualMachines/extensions",
+            "name": "[concat(variables('vmNamePrefix'),'0/sqlConfig')]",
+            "apiVersion": "2020-12-01",
+            "location": "[parameters('location')]",
+            "dependsOn": [
+                "virtualMachineLoop",
+                "virtualMachineExtensionLoop",
+                "clusterIpLoop",
+                "[resourceId('Microsoft.Storage/storageAccounts', variables('witnessStorageName'))]"
+            ],
+            "properties": {
+                "publisher": "Microsoft.Powershell",
+                "type": "DSC",
+                "typeHandlerVersion": "2.71",
+                "autoUpgradeMinorVersion": true,
+                "settings": {
+                    "modulesUrl": "[variables('sqlConfigModulesURL')]",
+                    "configurationFunction": "[variables('sqlConfigFunction')]",
+                    "properties": {
+                        "domainName": "[parameters('domainName')]",
+                        "clusterName": "[variables('clusterName')]",
+                        "vmNamePrefix": "[variables('vmNamePrefix')]",
+                        "sqlAlwaysOnAvailabilityGroupName": "[variables('agName')]",
+                        "sqlAlwaysOnAvailabilityGroupListenerName": "[variables('agListenerName')]",
+                        "sqlAlwaysOnEndpointName": "[variables('agEpName')]",
+                        "vmCount": "[parameters('vmCount')]",
+                        "clusterIpAddresses": "[reference(resourceId('Microsoft.Resources/deployments', concat(variables('vmNamePrefix'),sub(parameters('vmCount'),1),'-clusterIp'))).outputs.result.value]",
+                        "agListenerIpAddress": "[reference(resourceId('Microsoft.Network/loadbalancers', variables('lbName'))).frontendIPConfigurations[0].properties.privateIPAddress]",
+                        "numberOfDisks": "[parameters('vmDiskCount')]",
+                        "workloadType": "[parameters('workloadType')]",
+                        "databaseEnginePort": "[variables('agListenerPort')]",
+                        "probePortNumber": "[variables('agProbePort')]",
+                        "witnessStorageName": "[variables('witnessStorageName')]",
+                        "witnessStorageKey": {
+                            "userName": "PLACEHOLDER-DO-NOT-USE",
+                            "password": "PrivateSettingsRef:witnessStorageKey"
+                        },
+                        "adminCreds": {
+                            "userName": "[parameters('adminUserName')]",
+                            "password": "PrivateSettingsRef:adminPassword"
+                        },
+                        "sqlServiceCreds": {
+                            "userName": "[parameters('sqlServiceAccount')]",
+                            "password": "PrivateSettingsRef:sqlServicePassword"
+                        }
+                    }
+                },
+                "protectedSettings": {
+                    "items": {
+                        "adminPassword": "[parameters('adminPassword')]",
+                        "sqlServicePassword": "[parameters('sqlServicePassword')]",
+                        "witnessStorageKey": "[listKeys(resourceId('Microsoft.Storage/storageAccounts',variables('witnessStorageName')), '2019-06-01').keys[0].value]"
+                    }
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "2020-10-01",
+            "name": "[concat(variables('vmNamePrefix'),'lbbepool')]",
+            "condition": "[equals(parameters('enableOutboundInternet'),'No')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Compute/virtualMachines/extensions', concat(variables('vmNamePrefix'),'0'), 'sqlConfig')]"
+            ],
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[variables('lbBEPoolTemplateURL')]"
+                },
+                "parameters": {
+                    "location": {
+                        "value": "[parameters('location')]"
+                    },
+                    "vmNamePrefix": {
+                        "value": "[variables('vmNamePrefix')]"
+                    },
+                    "vmCount": {
+                        "value": "[parameters('vmCount')]"
+                    },
+                    "subnetId": {
+                        "value": "[parameters('subnetId')]"
+                    },
+                    "lbBEAddressPoolID": {
+                        "value": "[variables('lbBEAddressPoolID')]"
+                    }
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "2020-10-01",
+            "name": "[concat(variables('vmNamePrefix'),'albbepool')]",
+            "condition": "[equals(parameters('enableOutboundInternet'),'Yes')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Compute/virtualMachines/extensions', concat(variables('vmNamePrefix'),'0'), 'sqlConfig')]"
+            ],
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[variables('albBEPoolTemplateURL')]"
+                },
+                "parameters": {
+                    "location": {
+                        "value": "[parameters('location')]"
+                    },
+                    "vmNamePrefix": {
+                        "value": "[variables('vmNamePrefix')]"
+                    },
+                    "vmCount": {
+                        "value": "[parameters('vmCount')]"
+                    },
+                    "subnetId": {
+                        "value": "[parameters('subnetId')]"
+                    },
+                    "lbBEAddressPoolID": {
+                        "value": "[variables('lbBEAddressPoolID')]"
+                    },
+                    "albBEAddressPoolID": {
+                        "value": "[variables('albBEAddressPoolID')]"
+                    }
+                }
+            }
+        }
+    ],
+    "outputs": {
+        "agListenerName": {
+            "type": "string",
+            "value": "[variables('agListenerName')]"
+        }
+    }
+}

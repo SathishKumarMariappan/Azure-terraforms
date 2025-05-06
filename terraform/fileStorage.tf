@@ -1,6 +1,6 @@
 resource "azurerm_resource_group" "resourcegroupfilestorege" {
   name     = "file-storage-resourse"
-  location = "West Europe"
+  location = var.resource_group_location
 }
 
 
@@ -17,22 +17,19 @@ resource "azurerm_storage_account" "file-storage" {
 }
 
 
-resource "azurerm_app_service_plan" "file-service-app-service-plan" {
+resource "azurerm_service_plan" "file-service-app-service-plan" {
   name                = "file-service-appserviceplan"
   location            = azurerm_resource_group.resourcegroupfilestorege.location
   resource_group_name = azurerm_resource_group.resourcegroupfilestorege.name
-
-  sku {
-    tier = "Standard"
-    size = "S1"
-  }
+  os_type             = "Linux"
+  sku_name            = "P1v2"
 }
 
 resource "azurerm_app_service" "example" {
   name                = "file-app-service"
   location            = azurerm_resource_group.resourcegroupfilestorege.location
   resource_group_name = azurerm_resource_group.resourcegroupfilestorege.name
-  app_service_plan_id = azurerm_app_service_plan.file-service-app-service-plan.id
+  app_service_plan_id = azurerm_service_plan.file-service-app-service-plan.id
 
   site_config {
     dotnet_framework_version = "v4.0"
@@ -40,7 +37,7 @@ resource "azurerm_app_service" "example" {
   }
 
   app_settings = {
-    "SOME_KEY" = "some-value"
+    "SOME_KEY" = "fdjmsty"
   }
 
 }
