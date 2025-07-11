@@ -11,7 +11,7 @@ resource "azurerm_role_definition" "role" {
 
   permissions {
     actions     = ["Microsoft.Resources/subscriptions/resourceGroups/read", 
-    "Microsoft.Resources/subscriptions/resourceGroups/admin", resource.azurerm_policy_definition.policy.name ]
+    "Microsoft.Resources/subscriptions/resourceGroups/admin" ]
     not_actions = []
   }
 
